@@ -1,37 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Polling App
 
-## Getting Started
+A Next.js 15 (App Router) application with Supabase authentication and shadcn/ui components. The homepage shows a login form when unauthenticated and the default content when signed in.
 
-First, run the development server:
+## Tech stack
+- Next.js 15 (App Router, Turbopack)
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui (button, input, label, card)
+- Supabase Auth (@supabase/supabase-js)
 
+## Getting started
+
+1) Install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Create environment file
+- Copy `.env.example` to `.env.local` and fill in your values:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+```
+Notes:
+- Use your Supabase project's URL (no trailing slash) and anon key from Dashboard → Project Settings → API.
+- Restart the dev server after changing env vars.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3) Run the dev server
+```bash
+npm run dev
+```
+Open http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Authentication
+- Auth context: `src/context/AuthContext.tsx` provides `useAuth()` with `{ user, session, loading, signOut }`.
+- Supabase client: `src/lib/supabaseClient.ts` exposes a lazy `getSupabaseClient()` that returns `null` if env vars are missing (prevents build-time failures).
+- Login form: `src/components/LoginForm.tsx` uses shadcn/ui and Supabase `signInWithPassword`.
+- Homepage gating: `src/app/page.tsx` renders `LoginForm` if `user` is null; otherwise shows the default content.
 
-## Learn More
+Example usage in client components:
+```tsx
+"use client";
+import { useAuth } from "@/context/AuthContext";
 
-To learn more about Next.js, take a look at the following resources:
+export default function Profile() {
+  const { user, loading, signOut } = useAuth();
+  if (loading) return <p>Loading...</p>;
+  if (!user) return <p>Not signed in</p>;
+  return (
+    <div>
+      <p>{user.email}</p>
+      <button onClick={signOut}>Sign out</button>
+    </div>
+  );
+}
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
+```
+src/
+  app/
+    auth/
+      login/page.tsx     # Login page (renders LoginForm)
+      register/page.tsx  # Register placeholder
+    layout.tsx           # Wrapped with AuthProvider
+    page.tsx             # Home, gated by auth
+  components/
+    LoginForm.tsx        # shadcn/ui + Supabase login
+    ui/                  # shadcn/ui components
+  context/
+    AuthContext.tsx      # AuthProvider + useAuth
+  lib/
+    supabaseClient.ts    # Lazy supabase client
+    utils.ts             # shadcn/ui util (cn)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Available scripts
+- `npm run dev`: Start Next.js dev server with Turbopack
+- `npm run build`: Build production bundle
+- `npm run start`: Start production server
+- `npm run lint`: Run ESLint
 
-## Deploy on Vercel
+## Adding UI components (shadcn/ui)
+You can add more components with the CLI:
+```bash
+npx shadcn@latest add badge textarea select dialog
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Common issues
+- Supabase not configured: Ensure `.env.local` has both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Restart the dev server after editing.
+- Env not picked up in prod: Re-run `npm run build` so Next.js inlines `NEXT_PUBLIC_*` variables.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Polling-App
+## Deployment
+- Any platform that supports Next.js. For Vercel, set the same env vars in project settings.
+
+## License
+MIT
