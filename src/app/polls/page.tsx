@@ -20,4 +20,4 @@ export default function PollsPage() {
       <PollList polls={mockPolls} />
     </div>
   );
-} 
+}
