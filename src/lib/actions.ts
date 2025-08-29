@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 
 export interface CreatePollFormState {
   error?: string;
+  success?: string;
 }
 
 export async function createPollAction(_prevState: CreatePollFormState, formData: FormData): Promise<CreatePollFormState> {
@@ -45,8 +46,10 @@ export async function createPollAction(_prevState: CreatePollFormState, formData
       return { error: insertOptionsError.message };
     }
 
-    redirect(`/polls/${poll.id}`);
-  } catch (e) {
+    return { success: "Poll created successfully" };
+  } catch (e: any) {
+    console.error(e);
+    if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
     return { error: "Unexpected error creating poll" };
   }
 }

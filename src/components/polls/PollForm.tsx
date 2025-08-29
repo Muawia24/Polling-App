@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,14 @@ export default function PollForm() {
   const initialState: CreatePollFormState = {};
   const [state, formAction] = useFormState(createPollAction, initialState);
   const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.success) {
+      const t = setTimeout(() => router.push("/polls"), 800);
+      return () => clearTimeout(t);
+    }
+  }, [state?.success, router]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -37,6 +46,7 @@ export default function PollForm() {
             <Textarea id="options" name="options" rows={5} placeholder={"Option A\nOption B\nOption C"} />
           </div>
           {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+          {state?.success ? <p className="text-sm text-green-600">{state.success}</p> : null}
           <SubmitButton />
         </form>
       </CardContent>
