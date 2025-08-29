@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
 
 export interface CreatePollFormState {
@@ -46,6 +47,8 @@ export async function createPollAction(_prevState: CreatePollFormState, formData
       return { error: insertOptionsError.message };
     }
 
+    revalidatePath("/polls");
+    revalidatePath(`/polls/${poll.id}`);
     return { success: "Poll created successfully" };
   } catch (e: any) {
     console.error(e);
@@ -92,6 +95,8 @@ export async function updatePollAction(_prev: UpdatePollFormState, formData: For
       .insert(options.map((text, index) => ({ poll_id: pollId, option_text: text, position: index })));
     if (insErr) return { error: insErr.message };
 
+    revalidatePath("/polls");
+    revalidatePath(`/polls/${pollId}`);
     redirect(`/polls/${pollId}`);
   } catch (_e) {
     return { error: "Unexpected error updating poll" };
@@ -116,6 +121,8 @@ export async function deletePollAction(_prev: DeletePollFormState, formData: For
     await supabase.from("poll_options").delete().eq("poll_id", pollId);
     const { error: delErr } = await supabase.from("polls").delete().eq("id", pollId);
     if (delErr) return { error: delErr.message };
+    revalidatePath("/polls");
+    revalidatePath(`/polls/${pollId}`);
     redirect("/polls");
   } catch (_e) {
     return { error: "Unexpected error deleting poll" };

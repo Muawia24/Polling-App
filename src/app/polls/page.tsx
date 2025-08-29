@@ -6,13 +6,13 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 export default async function PollsPage() {
   const supabase = getSupabaseServerClient();
 
-  let polls: Array<{ id: string; title: string; description: string | null }> = [];
+  let polls: Array<{ id: string; title: string; description: string | null; owner_id: string | null }> = [];
   let totalVotesByPollId = new Map<string, number>();
 
   if (supabase) {
     const { data: pollRows } = await supabase
       .from("polls")
-      .select("id, title, description")
+      .select("id, title, description, owner_id")
       .order("created_at", { ascending: false });
     polls = pollRows || [];
 
@@ -31,6 +31,7 @@ export default async function PollsPage() {
     title: p.title,
     description: p.description || "",
     totalVotes: totalVotesByPollId.get(p.id) || 0,
+    createdBy: p.owner_id ?? null,
   }));
 
   return (
