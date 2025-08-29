@@ -1,14 +1,38 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PollList } from "@/components/polls/PollList";
+import { getSupabaseServerClient } from "@/lib/supabaseServer";
 
-const mockPolls = [
-  { id: "1", title: "Favorite JS framework?", description: "React, Vue, Svelte, Angular?", totalVotes: 12 },
-  { id: "2", title: "Tabs vs Spaces?", description: "Choose wisely.", totalVotes: 42 },
-  { id: "3", title: "Light or Dark mode?", description: "UX matters.", totalVotes: 7 },
-];
+export default async function PollsPage() {
+  const supabase = getSupabaseServerClient();
 
-export default function PollsPage() {
+  let polls: Array<{ id: string; title: string; description: string | null }> = [];
+  let totalVotesByPollId = new Map<string, number>();
+
+  if (supabase) {
+    const { data: pollRows } = await supabase
+      .from("polls")
+      .select("id, title, description")
+      .order("created_at", { ascending: false });
+    polls = pollRows || [];
+
+    const { data: countsRows } = await supabase
+      .from("poll_option_counts")
+      .select("poll_id, vote_count");
+    if (countsRows) {
+      for (const row of countsRows as Array<{ poll_id: string; vote_count: number }>) {
+        totalVotesByPollId.set(row.poll_id, (totalVotesByPollId.get(row.poll_id) || 0) + (row.vote_count || 0));
+      }
+    }
+  }
+
+  const listItems = polls.map((p) => ({
+    id: p.id,
+    title: p.title,
+    description: p.description || "",
+    totalVotes: totalVotesByPollId.get(p.id) || 0,
+  }));
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -17,7 +41,7 @@ export default function PollsPage() {
           <Link href="/polls/new">New poll</Link>
         </Button>
       </div>
-      <PollList polls={mockPolls} />
+      <PollList polls={listItems} />
     </div>
   );
 }
