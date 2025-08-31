@@ -59,6 +59,7 @@ export async function createPollAction(_prevState: CreatePollFormState, formData
 
 export interface UpdatePollFormState {
   error?: string;
+  success?: string;
 }
 
 export async function updatePollAction(_prev: UpdatePollFormState, formData: FormData): Promise<UpdatePollFormState> {
@@ -97,7 +98,7 @@ export async function updatePollAction(_prev: UpdatePollFormState, formData: For
 
     revalidatePath("/polls");
     revalidatePath(`/polls/${pollId}`);
-    redirect(`/polls/${pollId}`);
+    return { success: "Changes saved" };
   } catch (_e) {
     return { error: "Unexpected error updating poll" };
   }

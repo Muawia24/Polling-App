@@ -1,16 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { OwnerActions } from "../../../components/polls/OwnerActions";
+import VotingForm from "../../../components/polls/VotingForm";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PollDetailPage({ params }: PageProps) {
-  const { id } = params;
+  const { id } = await params;
   const supabase = getSupabaseServerClient();
   if (!supabase) notFound();
 
@@ -45,17 +44,7 @@ export default async function PollDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-gray-600">{poll.description}</p>
-          <ul className="space-y-2">
-            {options.map((opt) => (
-              <li key={opt.id} className="flex items-center justify-between rounded border p-3">
-                <span>{opt.text}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">{opt.votes ?? 0} votes</span>
-                  <Button size="sm" variant="secondary">Vote</Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <VotingForm pollId={poll.id} options={options} />
         </CardContent>
       </Card>
     </div>
