@@ -18,24 +18,41 @@ export default function SignupForm() {
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    const isEmailValid = /\S+@\S+\.\S+/.test(email);
+    const isEmailValid = useMemo(() => {
+        if (!email) return false;
+        // Simple RFC5322-like pattern; good enough for client-side UX
+        const emailPattern = /^(?:[a-zA-Z0-9_'^&+%`{}~|-]+(?:\.[a-zA-Z0-9_'^&+%`{}~|-]+)*|"(?:[^"]|\\")+")@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+        return emailPattern.test(email);
+    }, [email]);
+    
     const isPasswordValid = password.length >= 6;
 
-    const onSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSubmitting(true);
-        setError(null);
+    const validate = () => {
+        const next: { email?: string; password?: string } = {};
+        if (!email) next.email = "Email is required";
+        else if (!isEmailValid) next.email = "Enter a valid email";
+        if (!password) next.password = "Password is required";
+        else if (!isPasswordValid) next.password = "At least 6 characters";
+        setFieldErrors(next);
+        return Object.keys(next).length === 0;
+    };
 
-        try{
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError(null);
+        if (!validate()) return;
+        setSubmitting(true);
+        
+        try {
             const supabase = getSupabaseClient();
-                if (!supabase) {
-                    setError("Supabase is not configured. Add env vars and reload.");
-                    return;
-                }
+            if (!supabase) {
+                setError("Supabase is not configured. Add env vars and reload.");
+                return;
+            }
             const { error: signUpError } = await supabase.auth.signUp({
                 email,
                 password,
-            })
+            });
             if (signUpError) {
                 setError(signUpError.message);
                 return;
@@ -43,9 +60,9 @@ export default function SignupForm() {
             router.push("/polls");
         } catch (err: unknown) {
             console.log(err);
-        setError(err instanceof Error ? err.message : "Unexpected error");
+            setError(err instanceof Error ? err.message : "Unexpected error");
         } finally {
-        setSubmitting(false);
+            setSubmitting(false);
         }
     };
 

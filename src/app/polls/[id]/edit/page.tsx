@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
 import UpdatePollForm from "@/components/polls/UpdatePollForm";
+import { EditPoll, PollOptionEdit } from "@/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -10,12 +11,12 @@ export default async function EditPollPage({ params }: PageProps) {
   const supabase = getSupabaseServerClient();
   if (!supabase) return <div className="p-6">Server not configured.</div> as any;
   const { id } = await params;
-  const { data: poll } = await supabase.from("polls").select("id, title, description, owner_id").eq("id", id).single();
+  const { data: poll } = await supabase.from("polls").select("id, title, description, owner_id").eq("id", id).single() as { data: EditPoll | null };
   const { data: options } = await supabase
     .from("poll_options")
     .select("option_text, position")
     .eq("poll_id", id)
-    .order("position", { ascending: true });
+    .order("position", { ascending: true }) as { data: PollOptionEdit[] | null };
   if (!poll) return <div className="p-6">Poll not found.</div> as any;
 
   const optionsText = (options || []).map((o) => o.option_text).join("\n");

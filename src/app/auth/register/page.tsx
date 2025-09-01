@@ -2,9 +2,8 @@ import SignupForm from "@/components/SignupForm";
 
 export default function RegisterPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold">Register</h1>
+    <div className="min-h-[60vh] w-full flex items-center justify-center p-4">
       <SignupForm />
     </div>
   );
-} 
+}
