@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PollList } from "@/components/polls/PollList";
-import { getSupabaseServerClient } from "@/lib/supabaseServer";
+import { getSupabaseClient } from "@/lib/supabaseClient"; 
 
 export default async function PollsPage() {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseClient();
 
   let polls: Array<{ id: string; title: string; description: string | null; owner_id: string | null }> = [];
   let totalVotesByPollId = new Map<string, number>();

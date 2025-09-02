@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getSupabaseServerClient } from "@/lib/supabaseServer";
+import { getSupabaseClient } from "@/lib/supabaseClient"; 
 
 export interface CreatePollFormState {
   error?: string;
@@ -10,7 +10,7 @@ export interface CreatePollFormState {
 }
 
 export async function createPollAction(_prevState: CreatePollFormState, formData: FormData): Promise<CreatePollFormState> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseClient();
   if (!supabase) {
     return { error: "Server is not configured for database access." };
   }
@@ -63,7 +63,7 @@ export interface UpdatePollFormState {
 }
 
 export async function updatePollAction(_prev: UpdatePollFormState, formData: FormData): Promise<UpdatePollFormState> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseClient();
   if (!supabase) return { error: "Server is not configured for database access." };
 
   const pollId = (formData.get("pollId") as string | null) || null;
@@ -107,7 +107,7 @@ export async function updatePollAction(_prev: UpdatePollFormState, formData: For
 export interface DeletePollFormState { error?: string }
 
 export async function deletePollAction(_prev: DeletePollFormState, formData: FormData): Promise<DeletePollFormState> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseClient();
   if (!supabase) return { error: "Server is not configured for database access." };
   const pollId = (formData.get("pollId") as string | null) || null;
   const userId = (formData.get("userId") as string | null) || null;

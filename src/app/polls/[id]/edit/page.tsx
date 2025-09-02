@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSupabaseServerClient } from "@/lib/supabaseServer";
+import { getSupabaseClient } from "@/lib/supabaseClient"; 
 import UpdatePollForm from "@/components/polls/UpdatePollForm";
 import { EditPoll, PollOptionEdit } from "@/types";
 
@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 export default async function EditPollPage({ params }: PageProps) {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseClient();
   if (!supabase) return <div className="p-6">Server not configured.</div> as any;
   const { id } = await params;
   const { data: poll } = await supabase.from("polls").select("id, title, description, owner_id").eq("id", id).single() as { data: EditPoll | null };

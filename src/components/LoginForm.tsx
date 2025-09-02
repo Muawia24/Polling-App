@@ -54,7 +54,13 @@ export default function LoginForm() {
         setError(signInError.message);
         return;
       }
-      router.push("/polls");
+      
+      // Add a small delay to ensure cookies are set before redirect
+      setTimeout(() => {
+        console.log('Login successful, redirecting to /polls');
+        router.refresh(); // Force a refresh to ensure new auth state is recognized
+        router.push("/polls");
+      }, 1000); // Increased timeout to ensure cookies are properly set
     } catch (err: unknown) {
         console.log(err);
       setError(err instanceof Error ? err.message : "Unexpected error");
@@ -139,4 +145,4 @@ export default function LoginForm() {
       </CardContent>
     </Card>
   );
-} 
+}

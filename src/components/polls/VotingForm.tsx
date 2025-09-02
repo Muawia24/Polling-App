@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 export interface VotingOption {
   id: string;
@@ -16,14 +17,21 @@ export interface VotingFormProps {
 }
 
 export default function VotingForm({ pollId, options }: VotingFormProps) {
+  const { user } = useAuth();
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOption) return;
+    if (!user) {
+      setError("You must be logged in to vote");
+      return;
+    }
 
+    setError(null);
     setIsSubmitting(true);
     
     // Simulate API call delay
@@ -72,6 +80,8 @@ export default function VotingForm({ pollId, options }: VotingFormProps) {
           </label>
         ))}
       </div>
+      
+      {error && <p className="text-sm text-red-600">{error}</p>}
       
       <Button 
         type="submit" 
