@@ -26,14 +26,16 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     
-    
+    const url = request.nextUrl;
    
-    if (!user && !request.nextUrl.pathname.startsWith("/auth")) {
+    if (!user && !url.pathname.startsWith("/auth")) {
       console.log('No auth cookie found');
-      const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/auth/login", request.url));
     }
+
+    if ((url.pathname === "/auth/login" || url.pathname === "/auth/register") && user) {
+    return NextResponse.redirect(new URL("/polls", request.url));
+  }
   }
 
   return NextResponse.next();

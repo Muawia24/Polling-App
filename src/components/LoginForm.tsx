@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -55,12 +55,8 @@ export default function LoginForm() {
         return;
       }
       
-      // Add a small delay to ensure cookies are set before redirect
-      setTimeout(() => {
-        console.log('Login successful, redirecting to /polls');
-        router.refresh(); // Force a refresh to ensure new auth state is recognized
-        router.push("/polls");
-      }, 1000); // Increased timeout to ensure cookies are properly set
+      router.push("/polls");
+      
     } catch (err: unknown) {
         console.log(err);
       setError(err instanceof Error ? err.message : "Unexpected error");
