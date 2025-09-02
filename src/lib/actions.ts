@@ -130,4 +130,94 @@ export async function deletePollAction(_prev: DeletePollFormState, formData: For
   }
 }
 
+export interface VoteFormState {
+  error?: string;
+  success?: string;
+}
+
+export async function submitVoteAction(_prev: VoteFormState, formData: FormData): Promise<VoteFormState> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { error: "Server is not configured for database access." };
+  
+  const pollId = (formData.get("pollId") as string | null) || null;
+  const optionId = (formData.get("optionId") as string | null) || null;
+  const userId = (formData.get("userId") as string | null) || null;
+  
+  if (!pollId) return { error: "Missing poll ID" };
+  if (!optionId) return { error: "No option selected" };
+  
+  try {
+    // Verify the poll exists and is public
+    const { data: poll, error: pollErr } = await supabase
+      .from("polls")
+      .select("id, is_public, expires_at")
+      .eq("id", pollId)
+      .single();
+      
+    if (pollErr || !poll) return { error: "Poll not found" };
+    if (!poll.is_public) return { error: "This poll is not available for voting" };
+    if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
+      return { error: "This poll has expired" };
+    }
+    
+    // Verify the option belongs to the poll
+    const { data: option, error: optionErr } = await supabase
+      .from("poll_options")
+      .select("id")
+      .eq("id", optionId)
+      .eq("poll_id", pollId)
+      .single();
+      
+    if (optionErr || !option) return { error: "Invalid option selected" };
+    
+    // Get fingerprint for anonymous users
+    const fingerprint = (formData.get("fingerprint") as string | null) || null;
+    
+    // Check if user has already voted
+    let existingVoteQuery = supabase
+      .from("votes")
+      .select("id")
+      .eq("poll_id", pollId);
+      
+    if (userId) {
+      // Check by user ID if authenticated
+      existingVoteQuery = existingVoteQuery.eq("voter_id", userId);
+    } else if (fingerprint) {
+      // Check by fingerprint if anonymous
+      existingVoteQuery = existingVoteQuery.eq("voter_fingerprint", fingerprint);
+    }
+    
+    const { data: existingVote, error: voteErr } = await existingVoteQuery.maybeSingle();
+    
+    if (!voteErr && existingVote) {
+      return { error: "You have already voted on this poll" };
+    }
+    
+    // Record the vote
+    const { error: insertErr } = await supabase
+      .from("votes")
+      .insert({
+        poll_id: pollId,
+        option_id: optionId,
+        voter_id: userId || null,
+        voter_ip: null, // We're not tracking IPs in this implementation
+        voter_fingerprint: fingerprint // Use fingerprint for anonymous users
+      });
+      
+    if (insertErr) {
+      if (insertErr.code === '23505') { // Unique constraint violation
+        return { error: "You have already voted on this poll" };
+      }
+      return { error: insertErr.message };
+    }
+    
+    // Revalidate the poll page to show updated vote counts
+    revalidatePath(`/polls/${pollId}`);
+    return { success: "Your vote has been recorded" };
+  } catch (e: any) {
+    console.error("Error submitting vote:", e);
+    return { error: "Unexpected error submitting vote" };
+  }
+}
+
 

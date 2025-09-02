@@ -27,15 +27,34 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
     
     const url = request.nextUrl;
+    
+    // Check if this is a specific poll page that might be public
+    const pollIdMatch = url.pathname.match(/\/polls\/([\w-]+)$/);
+    
+    if (pollIdMatch) {
+      // This is a specific poll page, check if it's public
+      const pollId = pollIdMatch[1];
+      const { data: poll } = await supabase
+        .from('polls')
+        .select('is_public')
+        .eq('id', pollId)
+        .single();
+      
+      // If the poll exists and is public, allow access without authentication
+      if (poll && poll.is_public) {
+        return response;
+      }
+    }
    
+    // For all other poll routes, require authentication
     if (!user && !url.pathname.startsWith("/auth")) {
-      console.log('No auth cookie found');
+      console.log('No auth cookie found, redirecting to login');
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
     if ((url.pathname === "/auth/login" || url.pathname === "/auth/register") && user) {
-    return NextResponse.redirect(new URL("/polls", request.url));
-  }
+      return NextResponse.redirect(new URL("/polls", request.url));
+    }
   }
 
   return NextResponse.next();
