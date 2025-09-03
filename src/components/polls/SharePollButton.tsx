@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
+import QRCode from "react-qr-code";
 
 interface SharePollButtonProps {
   shareUrl: string;
@@ -47,6 +48,10 @@ export default function SharePollButton({ shareUrl }: SharePollButtonProps) {
             </>
           )}
         </Button>
+      </div>
+      <div className="mt-4 flex flex-col items-center">
+        <div className="text-xs text-gray-500 mb-1">Or scan QR code:</div>
+        <QRCode value={shareUrl} size={96} />
       </div>
     </div>
   );
