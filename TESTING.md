@@ -19,6 +19,7 @@ This will execute all test files that match the pattern specified in the Jest co
 Tests are organized following the same structure as the source code:
 
 - `src/lib/__tests__/` - Tests for utility functions and server actions
+- `src/app/__tests__/` - Integration tests for app routes and features
 - `src/components/__tests__/` - Tests for React components (to be added)
 
 ## Server Actions Testing
@@ -29,6 +30,19 @@ Server actions in `src/lib/actions.ts` are tested using Jest mocks to simulate S
 2. Authorization checks
 3. Error handling
 4. Successful operations
+
+## Unit Tests
+
+Unit tests focus on testing individual functions in isolation. Examples include:
+
+- `src/lib/__tests__/actions.test.ts` - Tests for server actions like creating, updating, and deleting polls
+- `src/lib/__tests__/polls.test.ts` - Tests for poll-related functions like fetching a poll by ID and listing all polls
+
+## Integration Tests
+
+Integration tests verify that different parts of the application work together correctly:
+
+- `src/app/__tests__/polls-integration.test.ts` - Tests the complete poll update flow, including data fetching, updating, and path revalidation
 
 ## Adding New Tests
 
