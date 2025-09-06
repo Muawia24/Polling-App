@@ -9,6 +9,14 @@ export interface CreatePollFormState {
   success?: string;
 }
 
+/**
+ * Handles poll creation from a form submission.
+ * 
+ * Allows authenticated users to create new polls with a title, description, and options.
+ * User must be logged in; at least two options are required.
+ * Returns errors for missing title, user, or insufficient options. Handles Supabase errors.
+ * Called by PollForm component; updates poll list and detail pages via revalidatePath.
+ */
 export async function createPollAction(_prevState: CreatePollFormState, formData: FormData): Promise<CreatePollFormState> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -62,6 +70,14 @@ export interface UpdatePollFormState {
   success?: string;
 }
 
+/**
+ * Handles updating an existing poll's title, description, and options.
+ * 
+ * Lets poll owners edit their polls, ensuring only authorized users can make changes.
+ * Only the poll owner can update; at least two options required.
+ * Returns errors for missing poll ID, unauthorized user, or insufficient options.
+ * Used by UpdatePollForm; triggers revalidation for poll list and detail pages.
+ */
 export async function updatePollAction(_prev: UpdatePollFormState, formData: FormData): Promise<UpdatePollFormState> {
   const supabase = getSupabaseClient();
   if (!supabase) return { error: "Server is not configured for database access." };
@@ -106,6 +122,14 @@ export async function updatePollAction(_prev: UpdatePollFormState, formData: For
 
 export interface DeletePollFormState { error?: string }
 
+/**
+ * Handles deleting a poll and its options.
+ * 
+ * Allows poll owners to remove polls they created, cleaning up related options.
+ * Only the poll owner can delete; deletes options first to avoid FK issues.
+ * Returns errors for missing poll ID, unauthorized user, or Supabase errors.
+ * Used by OwnerActions; redirects to poll list after deletion.
+ */
 export async function deletePollAction(_prev: DeletePollFormState, formData: FormData): Promise<DeletePollFormState> {
   const supabase = getSupabaseClient();
   if (!supabase) return { error: "Server is not configured for database access." };
@@ -135,6 +159,14 @@ export interface VoteFormState {
   success?: string;
 }
 
+/**
+ * Handles voting on a poll option.
+ * 
+ * Enables users (authenticated or anonymous) to vote on public, non-expired polls.
+ * Poll must be public and not expired; user/fingerprint must not have voted before.
+ * Prevents duplicate votes by user ID or fingerprint; checks option validity.
+ * Used by VotingForm; revalidates poll detail page to show updated results.
+ */
 export async function submitVoteAction(_prev: VoteFormState, formData: FormData): Promise<VoteFormState> {
   const supabase = getSupabaseClient();
   if (!supabase) return { error: "Server is not configured for database access." };
