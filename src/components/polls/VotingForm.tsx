@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { submitVoteAction, VoteFormState } from "@/lib/actions";
-import { useFormState } from "react-dom";
+import { submitVote, SubmitVoteResult } from "@/lib/utils";
 import { generateFingerprint } from "@/lib/fingerprint";
 
 export interface VotingOption {
@@ -20,11 +19,13 @@ export interface VotingFormProps {
 }
 
 export default function VotingForm({ pollId, options }: VotingFormProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [fingerprint, setFingerprint] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
+  const [formState, setFormState] = useState<SubmitVoteResult>({});
+  const [submitting, setSubmitting] = useState(false);
+
   // Generate fingerprint for anonymous users
   useEffect(() => {
     async function getFingerprint() {
@@ -34,14 +35,9 @@ export default function VotingForm({ pollId, options }: VotingFormProps) {
       }
       setIsLoading(false);
     }
-    
     getFingerprint();
   }, [user]);
-  
-  // Initialize form state with the server action
-  const initialState: VoteFormState = {};
-  const [formState, formAction] = useFormState(submitVoteAction, initialState);
-  
+
   // Show success message when vote is recorded
   if (formState.success) {
     return (
@@ -53,7 +49,7 @@ export default function VotingForm({ pollId, options }: VotingFormProps) {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => window.location.reload()} // Reload to see updated results
+              onClick={() => window.location.reload()}
               className="mt-2"
             >
               View Results
@@ -73,13 +69,27 @@ export default function VotingForm({ pollId, options }: VotingFormProps) {
     );
   }
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormState({});
+    const payload = {
+      pollId,
+      optionId: selectedOption,
+      userId: user?.id,
+      fingerprint: user ? undefined : fingerprint,
+    };
+    const result = await submitVote(payload, session?.access_token);
+    setFormState(result);
+    setSubmitting(false);
+  };
+
   return (
-    <form action={formAction} className="space-y-4">
-      {/* Hidden inputs for form data */}
+    <form onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="pollId" value={pollId} />
       <input type="hidden" name="userId" value={user?.id || ""} />
       <input type="hidden" name="fingerprint" value={fingerprint} />
-      
+
       <div className="space-y-3">
         {options.map((option) => (
           <label key={option.id} className="flex items-center space-x-3 cursor-pointer">
@@ -97,25 +107,23 @@ export default function VotingForm({ pollId, options }: VotingFormProps) {
           </label>
         ))}
       </div>
-      
-      {/* Display form errors */}
+
       {formState.error && (
         <p className="text-sm text-red-600">{formState.error}</p>
       )}
-      
-      {/* Show a message if user is not logged in but can still vote anonymously */}
+
       {!user && (
         <p className="text-xs text-gray-500 italic">
           You are voting anonymously. The system will prevent duplicate votes based on your browser fingerprint.
         </p>
       )}
-      
+
       <Button 
         type="submit" 
-        disabled={!selectedOption}
+        disabled={!selectedOption || submitting}
         className="w-full"
       >
-        Submit Vote
+        {submitting ? "Submitting..." : "Submit Vote"}
       </Button>
     </form>
   );

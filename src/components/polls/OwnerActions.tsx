@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import React from "react";
-import { deletePollAction, type DeletePollFormState } from "@/lib/actions";
-import { useFormState, useFormStatus } from "react-dom";
+import React, { useState } from "react";
+import { deletePoll} from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 export function OwnerActions({ pollId, createdBy }: { pollId: string; createdBy: string | null }) {
   const { user } = useAuth();
@@ -21,18 +21,30 @@ export function OwnerActions({ pollId, createdBy }: { pollId: string; createdBy:
 }
 
 function DeleteButton({ pollId, userId }: { pollId: string; userId: string }) {
-  const [state, formAction] = useFormState<DeletePollFormState, FormData>(deletePollAction, {});
-  const { pending } = useFormStatus();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+  const router = useRouter();
+
+  const handleDelete = async () => {
+    setPending(true);
+    setError(undefined);
+    const result = await deletePoll({ pollId, userId });
+    if (result.error) {
+      setError(result.error);
+    } else {
+      router.push("/polls");
+    }
+    setPending(false);
+  };
+
   return (
-    <form action={formAction} className="inline">
+    <form onSubmit={handleDelete} className="inline">
       <input type="hidden" name="pollId" value={pollId} />
       <input type="hidden" name="userId" value={userId} />
-      {state?.error ? <span className="text-xs text-red-600 mr-2">{state.error}</span> : null}
+      {error ? <span className="text-xs text-red-600 mr-2">{error}</span> : null}
       <Button type="submit" variant="destructive" size="sm" disabled={pending}>
         {pending ? "Deleting..." : "Delete"}
       </Button>
     </form>
   );
 }
-
-

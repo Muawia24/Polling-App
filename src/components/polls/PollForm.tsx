@@ -1,28 +1,47 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createPollAction, type CreatePollFormState } from "@/lib/actions";
+import { createPoll } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
+
 export default function PollForm() {
-  const initialState: CreatePollFormState = {};
-  const [state, formAction] = useFormState(createPollAction, initialState);
-  const { user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+  const [success, setSuccess] = useState<string | undefined>();
+  const { user, session } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (state?.success) {
-      const t = setTimeout(() => router.push("/polls"), 800);
-      return () => clearTimeout(t);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(undefined);
+    setSuccess(undefined);
+
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get("title")?.toString().trim() || "";
+    const description = formData.get("description")?.toString().trim();
+    const optionsRaw = formData.get("options")?.toString() || "";
+    const options = optionsRaw.split("\n").map(s => s.trim()).filter(s => s.length > 0);
+    const userId = user?.id || "";
+
+    const result = await createPoll({ title, description, options, userId }, session?.access_token);
+
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setSuccess(result.success || "Poll created!");
+      setTimeout(() => router.push("/polls"), 800);
     }
-  }, [state?.success, router]);
+    setSubmitting(false);
+  };
 
   return (
     <Card className="w-full max-w-xl">
@@ -31,7 +50,7 @@ export default function PollForm() {
         <CardDescription>Enter a title, optional description, and options (one per line).</CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="grid gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-4">
           <input type="hidden" name="userId" value={user?.id || ""} />
           <div className="grid gap-2">
             <Label htmlFor="title">Title</Label>
@@ -45,20 +64,13 @@ export default function PollForm() {
             <Label htmlFor="options">Options</Label>
             <Textarea id="options" name="options" rows={5} placeholder={"Option A\nOption B\nOption C"} />
           </div>
-          {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
-          {state?.success ? <p className="text-sm text-green-600">{state.success}</p> : null}
-          <SubmitButton />
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {success ? <p className="text-sm text-green-600">{success}</p> : null}
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Creating..." : "Create poll"}
+          </Button>
         </form>
       </CardContent>
     </Card>
   );
 } 
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "Creating..." : "Create poll"}
-    </Button>
-  );
-}
